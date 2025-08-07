@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheraConecta</title>
+    <!-- Inclui o Tailwind CSS para um design moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Importa a biblioteca Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+        }
+        /* Estilos personalizados para a barra de rolagem */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .active-link {
+            background-color: #6366f1;
+            color: #fff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .active-link:hover {
+            background-color: #4f46e5;
+        }
+        .chat-bubble {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+        }
+        .chat-bubble.sent {
+            background-color: #d1e7dd;
+            align-self: flex-end;
+            text-align: right;
+            border-bottom-right-radius: 5px;
+        }
+        .chat-bubble.received {
+            background-color: #f0f2f5;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen items-center justify-center">
+
+    <!-- Splash Screen Inicial -->
+    <div id="splashScreen" class="flex flex-col items-center justify-center p-8 bg-gray-100 min-h-screen w-full">
+        <div class="text-center">
+            <h1 class="text-6xl font-bold text-gray-800 mb-4">
+                <span class="text-indigo-600">Thera</span>Conecta
+            </h1>
+            <p class="text-xl text-gray-600 mb-12">Conectando pacientes e terapeutas ocupacionais.</p>
+            <div class="space-y-4">
+                <button id="patientBtn" class="w-80 px-8 py-5 bg-indigo-600 text-white rounded-2xl font-semibold shadow-lg hover:bg-indigo-700 transition-colors duration-200 transform hover:scale-105">
+                    Sou Paciente
+                </button>
+                <button id="therapistBtn" class="w-80 px-8 py-5 bg-white text-indigo-600 border border-indigo-600 rounded-2xl font-semibold shadow-lg hover:bg-indigo-50 transition-colors duration-200 transform hover:scale-105">
+                    Sou Terapeuta
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interface do Paciente -->
+    <div id="patientApp" class="hidden flex h-screen w-full bg-gray-100">
+        <main class="flex-1 p-8 overflow-y-auto">
+            <header class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">Olá, <span id="patientNameDisplay" class="text-indigo-600"></span>!</h1>
+                <button id="patientLogoutBtn" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors duration-200">
+                    Sair
+                </button>
+            </header>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Encontre um Terapeuta Ocupacional</h2>
+                <div id="therapistListPatient" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Terapeutas serão adicionados aqui -->
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        <p>Nenhum terapeuta disponível no momento. Por favor, volte mais tarde.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Detalhes do Terapeuta e Chat para Paciente -->
+    <div id="therapistDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70 hidden">
+        <div class="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl overflow-y-auto max-h-[90%]">
+            <div class="flex justify-between items-start mb-6">
+                <h2 class="text-3xl font-bold text-gray-800" id="therapistDetailName"></h2>
+                <button id="closeDetailModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-1 flex flex-col items-center space-y-4">
+                    <img id="therapistDetailImage" src="" alt="Foto do Terapeuta" class="w-32 h-32 rounded-full object-cover shadow-md">
+                    <p class="text-center font-semibold text-gray-700" id="therapistDetailSpecialty"></p>
+                </div>
+                <div class="md:col-span-2 space-y-4">
+                    <p class="text-gray-600" id="therapistDetailBio"></p>
+                    <button class="w-full px-6 py-4 bg-indigo-600 text-white rounded-xl font-semibold shadow-md hover:bg-indigo-700 transition-colors duration-200">
+                        Agendar Consulta
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Mande uma mensagem</h3>
+                <div id="patientChat" class="bg-gray-50 rounded-xl p-4 flex flex-col h-96 overflow-y-auto mb-4">
+                    <!-- Mensagens do paciente serão adicionadas aqui -->
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="text" id="patientChatInput" placeholder="Digite sua mensagem..." class="flex-1 p-3 rounded-xl border-gray-300 shadow-sm">
+                    <button id="sendPatientMsgBtn" class="p-3 bg-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 transition-colors duration-200">
+                        <i class="fas fa-paper-plane text-lg"></i>
+                    </button>
+                    <button class="p-3 bg-gray-200 text-gray-700 rounded-xl shadow-md hover:bg-gray-300 transition-colors duration-200">
+                        <i class="fas fa-map-marker-alt text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Interface do Terapeuta -->
+    <div id="therapistApp" class="hidden flex h-screen w-full bg-gray-100">
+        
+        <!-- Sidebar de Navegação -->
+        <aside id="sidebar" class="w-64 bg-white shadow-2xl p-6 flex flex-col justify-between rounded-r-3xl">
+            <div>
+                <div class="text-3xl font-bold text-gray-800 mb-10 text-center">
+                    <span class="text-indigo-600">Thera</span>Conecta
+                </div>
+                <nav class="space-y-2">
+                    <a href="#" data-page="dashboard" class="nav-link flex items-center space-x-3 p-3 rounded-xl text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200">
+                        <i class="fas fa-chart-line text-lg w-6 text-center"></i>
+                        <span class="font-medium">Dashboard</span>
+                    </a>
+                    <a href="#" data-page="patients" class="nav-link flex items-center space-x-3 p-3 rounded-xl text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200">
+                        <i class="fas fa-users text-lg w-6 text-center"></i>
+                        <span class="font-medium">Pacientes</span>
+                    </a>
+                    <a href="#" data-page="appointments" class="nav-link flex items-center space-x-3 p-3 rounded-xl text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200">
+                        <i class="fas fa-calendar-alt text-lg w-6 text-center"></i>
+                        <span class="font-medium">Agendamentos</span>
+                    </a>
+                    <a href="#" data-page="reports" class="nav-link flex items-center space-x-3 p-3 rounded-xl text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200">
+                        <i class="fas fa-file-alt text-lg w-6 text-center"></i>
+                        <span class="font-medium">Relatórios</span>
+                    </a>
+                    <a href="#" data-page="payments" class="nav-link flex items-center space-x-3 p-3 rounded-xl text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-200">
+                        <i class="fas fa-credit-card text-lg w-6 text-center"></i>
+                        <span class="font-medium">Pagamentos</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="mt-auto">
+                <button id="therapistLogoutBtn" class="flex items-center space-x-3 p-3 rounded-xl text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors duration-200 w-full justify-center">
+                    <i class="fas fa-sign-out-alt text-lg"></i>
+                    <span class="font-medium">Sair</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Conteúdo principal dinâmico -->
+        <main class="flex-1 p-8 overflow-y-auto">
+            
+            <section id="dashboard" class="content-section hidden">
+                <h1 class="text-3xl font-bold text-gray-900 mb-8">Dashboard do Terapeuta</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-700">Total de Pacientes</h3>
+                        <p class="text-4xl font-bold text-indigo-600 mt-2" id="patientCount">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-700">Próximas Consultas</h3>
+                        <p class="text-4xl font-bold text-indigo-600 mt-2">5</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-700">Renda Mensal (Est.)</h3>
+                        <p class="text-4xl font-bold text-indigo-600 mt-2">R$ 3.500</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="patients" class="content-section hidden">
+                <header class="flex justify-between items-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900">Meus Pacientes</h1>
+                    <button id="addPatientBtn" class="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 transition-colors duration-200 transform hover:scale-105">
+                        <i class="fas fa-plus mr-2"></i>
+                        Adicionar Paciente
+                    </button>
+                </header>
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Nome
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        E-mail
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Próxima Sessão
+                                    </th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        Ações
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="patientsTableBody" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="appointments" class="content-section hidden">
+                <h1 class="text-3xl font-bold text-gray-900 mb-8">Agendamentos e Mensagens</h1>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col h-[600px]">
+                    <div id="therapistChatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col space-y-4">
+                        <!-- Mensagens do terapeuta serão adicionadas aqui -->
+                    </div>
+                    <div class="flex items-center space-x-2 mt-4">
+                        <input type="text" id="therapistChatInput" placeholder="Digite sua mensagem..." class="flex-1 p-3 rounded-xl border-gray-300 shadow-sm">
+                        <button id="sendTherapistMsgBtn" class="p-3 bg-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 transition-colors duration-200">
+                            <i class="fas fa-paper-plane text-lg"></i>
+                        </button>
+                        <button class="p-3 bg-gray-200 text-gray-700 rounded-xl shadow-md hover:bg-gray-300 transition-colors duration-200">
+                            <i class="fas fa-map-marker-alt text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="reports" class="content-section hidden">
+                <h1 class="text-3xl font-bold text-gray-900 mb-8">Relatórios e Documentos</h1>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col items-start space-y-4">
+                    <p class="text-gray-600">Aqui você poderá criar e gerenciar documentos e planilhas de evolução para seus pacientes.</p>
+                    <button class="px-6 py-3 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-colors duration-200">
+                        <i class="fas fa-file-excel mr-2"></i>
+                        Criar Planilha (Excel)
+                    </button>
+                    <button class="px-6 py-3 bg-blue-600 text-white rounded-xl shadow-md hover:bg-blue-700 transition-colors duration-200">
+                        <i class="fas fa-file-word mr-2"></i>
+                        Criar Documento (Word)
+                    </button>
+                </div>
+            </section>
+
+            <section id="payments" class="content-section hidden">
+                <h1 class="text-3xl font-bold text-gray-900 mb-8">Formas de Pagamento</h1>
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col items-start space-y-4">
+                    <p class="text-gray-600">A negociação e o pagamento dos serviços são realizados diretamente entre você e seu paciente, sem a intermediação do TheraConecta. Você pode listar suas formas de pagamento preferidas aqui:</p>
+                    <div class="flex flex-wrap gap-4 mt-4">
+                        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl"><i class="fas fa-qrcode mr-2"></i>Pix</button>
+                        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl"><i class="fas fa-credit-card mr-2"></i>Cartão de Crédito</button>
+                        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl"><i class="fas fa-money-check-alt mr-2"></i>Cartão de Débito</button>
+                        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl"><i class="fab fa-paypal mr-2"></i>PayPal</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal para Cadastro de Paciente (apenas nome) -->
+    <div id="patientRegisterModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70 hidden">
+        <div class="bg-white rounded-2xl p-10 w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 ease-out">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-center text-gray-800">Bem-vindo(a)!</h2>
+                <button id="closePatientModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <form id="patientForm" class="space-y-6">
+                <div>
+                    <label for="patientRegisterName" class="block text-sm font-medium text-gray-600">Qual o seu nome?</label>
+                    <input type="text" id="patientRegisterName" name="patientRegisterName" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3" required>
+                </div>
+                <button type="submit" class="w-full px-6 py-4 bg-indigo-600 text-white rounded-xl font-semibold shadow-md hover:bg-indigo-700 transition-colors duration-200 transform hover:scale-105">
+                    Entrar
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal de Cadastro para o Terapeuta -->
+    <div id="therapistRegisterModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70 hidden">
+        <div class="bg-white rounded-2xl p-10 w-full max-w-md shadow-2xl overflow-y-auto max-h-[90%] transform scale-95 transition-transform duration-300 ease-out">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-center text-gray-800">Cadastro do Terapeuta</h2>
+                <button id="closeTherapistModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <form id="therapistForm" class="space-y-6">
+                <div class="space-y-4">
+                    <div class="flex justify-center">
+                        <div id="imagePreview" class="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 overflow-hidden">
+                            <i id="imagePlaceholder" class="fas fa-user-circle fa-4x"></i>
+                            <img id="profileImage" src="" alt="Pré-visualização da imagem" class="hidden w-full h-full object-cover">
+                        </div>
+                    </div>
+                    <label class="block text-center">
+                        <input type="file" id="therapistImage" class="hidden" accept="image/*">
+                        <span class="cursor-pointer text-indigo-600 font-semibold hover:underline">Adicionar Foto de Perfil</span>
+                    </label>
+                </div>
+                <div>
+                    <label for="therapistName" class="block text-sm font-medium text-gray-600">Nome Completo</label>
+                    <input type="text" id="therapistName" name="therapistName" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3" required>
+                </div>
+                <div>
+                    <label for="therapistSpecialty" class="block text-sm font-medium text-gray-600">Especialidade</label>
+                    <input type="text" id="therapistSpecialty" name="therapistSpecialty" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3" required>
+                </div>
+                <div>
+                    <label for="therapistBio" class="block text-sm font-medium text-gray-600">Descrição Curta</label>
+                    <textarea id="therapistBio" name="therapistBio" rows="3" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3" required></textarea>
+                </div>
+                <div>
+                    <label for="therapistEmail" class="block text-sm font-medium text-gray-600">E-mail</label>
+                    <input type="email" id="therapistEmail" name="therapistEmail" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3" required>
+                </div>
+                <div>
+                    <label for="therapistPassword" class="block text-sm font-medium text-gray-600">Senha</label>
+                    <input type="password" id="therapistPassword" name="therapistPassword" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3" required>
+                </div>
+                <button type="submit" class="w-full px-6 py-4 bg-indigo-600 text-white rounded-xl font-semibold shadow-md hover:bg-indigo-700 transition-colors duration-200 transform hover:scale-105">
+                    Cadastrar e Entrar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para Adicionar Paciente (na área do terapeuta) -->
+    <div id="addPatientModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 hidden">
+        <div class="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Novo Paciente</h2>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <form id="addPatientForm" class="space-y-4">
+                <div>
+                    <label for="newPatientName" class="block text-sm font-medium text-gray-700">Nome Completo</label>
+                    <input type="text" id="newPatientName" name="newPatientName" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2" required>
+                </div>
+                <div>
+                    <label for="newPatientEmail" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="newPatientEmail" name="newPatientEmail" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2" required>
+                </div>
+                <div class="flex justify-end pt-4">
+                    <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 transition-colors duration-200">
+                        Salvar Paciente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elementos da tela inicial
+            const splashScreen = document.getElementById('splashScreen');
+            const patientBtn = document.getElementById('patientBtn');
+            const therapistBtn = document.getElementById('therapistBtn');
+
+            // Elementos do paciente
+            const patientApp = document.getElementById('patientApp');
+            const patientRegisterModal = document.getElementById('patientRegisterModal');
+            const patientForm = document.getElementById('patientForm');
+            const patientRegisterNameInput = document.getElementById('patientRegisterName');
+            const patientNameDisplay = document.getElementById('patientNameDisplay');
+            const patientLogoutBtn = document.getElementById('patientLogoutBtn');
+            const therapistListPatient = document.getElementById('therapistListPatient');
+            const therapistDetailModal = document.getElementById('therapistDetailModal');
+            const closePatientModalBtn = document.getElementById('closePatientModalBtn');
+            const closeDetailModalBtn = document.getElementById('closeDetailModalBtn');
+            const patientChat = document.getElementById('patientChat');
+            const patientChatInput = document.getElementById('patientChatInput');
+            const sendPatientMsgBtn = document.getElementById('sendPatientMsgBtn');
+
+            // Elementos do terapeuta
+            const therapistApp = document.getElementById('therapistApp');
+            const therapistRegisterModal = document.getElementById('therapistRegisterModal');
+            const therapistForm = document.getElementById('therapistForm');
+            const therapistImageInput = document.getElementById('therapistImage');
+            const imagePreview = document.getElementById('imagePreview');
+            const imagePlaceholder = document.getElementById('imagePlaceholder');
+            const profileImage = document.getElementById('profileImage');
+            const therapistLogoutBtn = document.getElementById('therapistLogoutBtn');
+            const therapistNavLinks = document.querySelectorAll('#therapistApp .nav-link');
+            const therapistContentSections = document.querySelectorAll('#therapistApp .content-section');
+            const addPatientBtn = document.getElementById('addPatientBtn');
+            const addPatientModal = document.getElementById('addPatientModal');
+            const addPatientForm = document.getElementById('addPatientForm');
+            const patientsTableBody = document.getElementById('patientsTableBody');
+            const patientCountElement = document.getElementById('patientCount');
+            const therapistChatMessages = document.getElementById('therapistChatMessages');
+            const therapistChatInput = document.getElementById('therapistChatInput');
+            const sendTherapistMsgBtn = document.getElementById('sendTherapistMsgBtn');
+
+            let therapists = [];
+            let patients = [];
+
+            // Função para alternar entre as telas principais
+            function showScreen(screenId) {
+                const screens = [splashScreen, patientApp, therapistApp, patientRegisterModal, therapistRegisterModal, therapistDetailModal, addPatientModal];
+                screens.forEach(screen => screen.classList.add('hidden'));
+                document.getElementById(screenId).classList.remove('hidden');
+            }
+
+            // Funções de renderização
+            function renderTherapistList() {
+                therapistListPatient.innerHTML = '';
+                if (therapists.length === 0) {
+                    therapistListPatient.innerHTML = `<div class="col-span-full text-center py-8 text-gray-500">
+                        <p>Nenhum terapeuta disponível no momento. Por favor, volte mais tarde.</p>
+                    </div>`;
+                } else {
+                    therapists.forEach(therapist => {
+                        const therapistCard = document.createElement('div');
+                        therapistCard.className = 'bg-white p-6 rounded-2xl shadow-lg border border-gray-200';
+                        therapistCard.innerHTML = `
+                            <div class="flex items-center space-x-4">
+                                <img src="${therapist.image}" alt="Foto de ${therapist.name}" class="w-16 h-16 rounded-full object-cover">
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-700">${therapist.name}</h3>
+                                    <p class="text-sm text-gray-500 mt-1">Especialidade: ${therapist.specialty}</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-4">${therapist.bio}</p>
+                            <button class="view-therapist-btn mt-4 w-full px-4 py-2 bg-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 transition-colors duration-200" data-therapist-id="${therapist.id}">Ver Perfil e Agendar</button>
+                        `;
+                        therapistListPatient.appendChild(therapistCard);
+                    });
+                }
+            }
+
+            function renderPatientsTable() {
+                patientsTableBody.innerHTML = '';
+                if (patients.length === 0) {
+                    patientsTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                Nenhum paciente cadastrado.
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    patients.forEach(patient => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50';
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">${patient.name}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-500">${patient.email}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">${patient.nextSession}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button class="text-indigo-600 hover:text-indigo-900">Ver Perfil</button>
+                            </td>
+                        `;
+                        patientsTableBody.appendChild(row);
+                    });
+                }
+                updatePatientCount();
+            }
+            
+            function updatePatientCount() {
+                if (patientCountElement) {
+                    patientCountElement.textContent = patients.length;
+                }
+            }
+
+            function showTherapistPage(pageId) {
+                therapistContentSections.forEach(section => section.classList.add('hidden'));
+                document.getElementById(pageId).classList.remove('hidden');
+                
+                therapistNavLinks.forEach(link => link.classList.remove('active-link'));
+                const activeLink = document.querySelector(`#therapistApp .nav-link[data-page="${pageId}"]`);
+                if (activeLink) {
+                    activeLink.classList.add('active-link');
+                }
+            }
+
+
+            // Lógica do Paciente
+            patientBtn.addEventListener('click', () => showScreen('patientRegisterModal'));
+            closePatientModalBtn.addEventListener('click', () => showScreen('splashScreen'));
+            
+            patientForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const patientName = patientRegisterNameInput.value.trim();
+                if (patientName) {
+                    patientNameDisplay.textContent = patientName;
+                    showScreen('patientApp');
+                    renderTherapistList();
+                }
+            });
+
+            patientLogoutBtn.addEventListener('click', () => showScreen('splashScreen'));
+            
+            therapistListPatient.addEventListener('click', (e) => {
+                if (e.target.classList.contains('view-therapist-btn')) {
+                    const therapistId = e.target.getAttribute('data-therapist-id');
+                    const selectedTherapist = therapists.find(t => t.id === therapistId);
+                    if (selectedTherapist) {
+                        document.getElementById('therapistDetailImage').src = selectedTherapist.image;
+                        document.getElementById('therapistDetailName').textContent = selectedTherapist.name;
+                        document.getElementById('therapistDetailSpecialty').textContent = selectedTherapist.specialty;
+                        document.getElementById('therapistDetailBio').textContent = selectedTherapist.bio;
+                        patientChat.innerHTML = ''; // Limpa o chat para uma nova conversa
+                        showScreen('therapistDetailModal');
+                    }
+                }
+            });
+
+            closeDetailModalBtn.addEventListener('click', () => {
+                showScreen('patientApp');
+            });
+
+            function sendPatientMessage() {
+                const messageText = patientChatInput.value.trim();
+                if (messageText) {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('chat-bubble', 'sent');
+                    messageDiv.textContent = messageText;
+                    patientChat.appendChild(messageDiv);
+                    patientChatInput.value = '';
+                    patientChat.scrollTop = patientChat.scrollHeight;
+                }
+            }
+            sendPatientMsgBtn.addEventListener('click', sendPatientMessage);
+            patientChatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendPatientMessage();
+                }
+            });
+
+            // Lógica do Terapeuta
+            therapistBtn.addEventListener('click', () => showScreen('therapistRegisterModal'));
+            closeTherapistModalBtn.addEventListener('click', () => showScreen('splashScreen'));
+
+            therapistForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newTherapist = {
+                    id: 'thera-' + Date.now(),
+                    image: profileImage.src || 'https://placehold.co/128x128/e2e8f0/94a3b8?text=Foto',
+                    name: document.getElementById('therapistName').value,
+                    specialty: document.getElementById('therapistSpecialty').value,
+                    bio: document.getElementById('therapistBio').value,
+                };
+                therapists.push(newTherapist);
+                showScreen('therapistApp');
+                showTherapistPage('dashboard');
+                renderPatientsTable();
+            });
+
+            therapistImageInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        profileImage.src = e.target.result;
+                        profileImage.classList.remove('hidden');
+                        imagePlaceholder.classList.add('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            therapistLogoutBtn.addEventListener('click', () => showScreen('splashScreen'));
+
+            therapistNavLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const pageId = e.currentTarget.getAttribute('data-page');
+                    showTherapistPage(pageId);
+                });
+            });
+
+            addPatientBtn.addEventListener('click', () => showScreen('addPatientModal'));
+            closeModalBtn.addEventListener('click', () => showScreen('therapistApp'));
+            
+            addPatientForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newPatient = {
+                    name: document.getElementById('newPatientName').value,
+                    email: document.getElementById('newPatientEmail').value,
+                    nextSession: 'A ser agendada'
+                };
+                patients.push(newPatient);
+                renderPatientsTable();
+                showScreen('therapistApp');
+                addPatientForm.reset();
+            });
+
+            function sendTherapistMessage() {
+                const messageText = therapistChatInput.value.trim();
+                if (messageText) {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('chat-bubble', 'sent');
+                    messageDiv.textContent = messageText;
+                    therapistChatMessages.appendChild(messageDiv);
+                    therapistChatInput.value = '';
+                    therapistChatMessages.scrollTop = therapistChatMessages.scrollHeight;
+                }
+            }
+            sendTherapistMsgBtn.addEventListener('click', sendTherapistMessage);
+            therapistChatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendTherapistMessage();
+                }
+            });
+
+            // Inicia na tela inicial
+            showScreen('splashScreen');
+        });
+    </script>
+</body>
+</html>
